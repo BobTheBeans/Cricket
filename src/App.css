@@ -337,22 +337,20 @@ details[open] summary::before { content: '▼ '; }
   margin-top: 24px;
 }
 
-/* ── Setup Banner ── */
-.setup-banner {
+/* ── Demo Banner ── */
+.demo-banner {
   background: #fff8e1;
   border: 1px solid #ffe082;
   border-radius: var(--radius);
-  padding: 24px;
-  margin-bottom: 20px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 0.84rem;
+  color: #5d4037;
 }
-.setup-banner h2 { font-size: 1.05rem; margin-bottom: 10px; color: #5d4037; }
-.setup-banner p { font-size: 0.9rem; color: var(--text-mid); margin-bottom: 12px; }
-.setup-banner ol { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
-.setup-banner li { font-size: 0.88rem; color: var(--text-mid); }
-.setup-banner code {
+.demo-banner code {
   background: rgba(0,0,0,0.07);
   border-radius: 4px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   padding: 1px 5px;
 }
 

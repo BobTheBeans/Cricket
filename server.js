@@ -3,6 +3,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { mockMatches, mockMatchDetails } from './mockData.js';
 
 dotenv.config();
 
@@ -16,13 +17,12 @@ const API_TOKEN = process.env.PLAYCRICKET_API_TOKEN || '';
 function currentSeason() {
   const now = new Date();
   const year = now.getFullYear();
-  // UK cricket season runs April–September; treat Oct+ as next year's setup
   return now.getMonth() >= 9 ? year + 1 : year;
 }
 
 app.get('/api/matches', async (req, res) => {
   if (!API_TOKEN) {
-    return res.status(503).json({ error: 'API token not configured', unconfigured: true });
+    return res.json({ ...mockMatches, demo: true });
   }
   try {
     const season = req.query.season || currentSeason();
@@ -39,7 +39,9 @@ app.get('/api/matches', async (req, res) => {
 
 app.get('/api/match/:id', async (req, res) => {
   if (!API_TOKEN) {
-    return res.status(503).json({ error: 'API token not configured', unconfigured: true });
+    const detail = mockMatchDetails[req.params.id];
+    if (detail) return res.json({ ...detail, demo: true });
+    return res.status(404).json({ error: 'Match not found' });
   }
   try {
     const { data } = await axios.get(`${API_BASE}/match_detail.json`, {
@@ -61,6 +63,6 @@ if (process.env.NODE_ENV === 'production') {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   if (!API_TOKEN) {
-    console.warn('⚠  PLAYCRICKET_API_TOKEN not set — copy .env.example to .env and add your token');
+    console.log('ℹ  Running in demo mode with mock data (no PLAYCRICKET_API_TOKEN set)');
   }
 });

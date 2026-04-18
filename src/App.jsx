@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MatchCard from './components/MatchCard.jsx';
 import { fetchMatches } from './api.js';
-import { categorise, todayISO } from './utils/matchHelpers.js';
+import { categorise } from './utils/matchHelpers.js';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const SEASONS = Array.from({ length: 4 }, (_, i) => CURRENT_YEAR - i);
@@ -15,19 +15,10 @@ function EmptyState({ tab }) {
   return <div className="empty-state">{messages[tab]}</div>;
 }
 
-function SetupBanner() {
+function DemoBanner() {
   return (
-    <div className="setup-banner">
-      <h2>API Token Required</h2>
-      <p>
-        To display live scores, you need a PlayCricket API token.
-      </p>
-      <ol>
-        <li>Contact <strong>support@play-cricket.com</strong> to request API access for Sparsholt CC</li>
-        <li>Copy <code>.env.example</code> to <code>.env</code></li>
-        <li>Add your token: <code>PLAYCRICKET_API_TOKEN=your_token_here</code></li>
-        <li>Restart the server</li>
-      </ol>
+    <div className="demo-banner">
+      Demo mode — showing sample data. Add a <code>PLAYCRICKET_API_TOKEN</code> to <code>.env</code> for live data.
     </div>
   );
 }
@@ -38,7 +29,7 @@ export default function App() {
   const [season, setSeason] = useState(CURRENT_YEAR);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [unconfigured, setUnconfigured] = useState(false);
+  const [demo, setDemo] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
 
   const loadMatches = useCallback(async () => {
@@ -47,10 +38,10 @@ export default function App() {
     try {
       const data = await fetchMatches(season);
       setMatches(data.matches ?? []);
+      setDemo(!!data.demo);
       setLastRefresh(new Date());
     } catch (e) {
-      if (e.unconfigured) setUnconfigured(true);
-      else setError(e.message);
+      setError(e.message);
     } finally {
       setLoading(false);
     }
@@ -58,21 +49,20 @@ export default function App() {
 
   useEffect(() => {
     loadMatches();
-    // Refresh the match list every 5 minutes
     const interval = setInterval(loadMatches, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [loadMatches]);
 
-  // Switch to fixtures if no live matches when tab loads
+  const liveMatches = matches.filter(m => categorise(m) === 'live');
+  const fixtureMatches = matches.filter(m => categorise(m) === 'fixture');
+  const resultMatches = matches.filter(m => categorise(m) === 'result').reverse();
+
+  // Auto-switch away from empty Live tab
   useEffect(() => {
     if (!loading && tab === 'live' && liveMatches.length === 0 && fixtureMatches.length > 0) {
       setTab('fixtures');
     }
   });
-
-  const liveMatches = matches.filter(m => categorise(m) === 'live');
-  const fixtureMatches = matches.filter(m => categorise(m) === 'fixture');
-  const resultMatches = matches.filter(m => categorise(m) === 'result').reverse();
 
   const tabs = [
     { id: 'live', label: 'Live', count: liveMatches.length },
@@ -123,23 +113,23 @@ export default function App() {
       </nav>
 
       <main className="main-content">
-        {unconfigured && <SetupBanner />}
+        {demo && <DemoBanner />}
 
-        {!unconfigured && loading && matches.length === 0 && (
+        {loading && matches.length === 0 && (
           <div className="loading-state">
             <div className="spinner" />
             <p>Loading matches…</p>
           </div>
         )}
 
-        {!unconfigured && error && (
+        {error && (
           <div className="error-banner">
             <strong>Error:</strong> {error}
             <button onClick={loadMatches} className="retry-btn">Retry</button>
           </div>
         )}
 
-        {!unconfigured && !loading && !error && visibleMatches.length === 0 && (
+        {!loading && !error && visibleMatches.length === 0 && (
           <EmptyState tab={tab} />
         )}
 
